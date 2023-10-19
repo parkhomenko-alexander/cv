@@ -9,6 +9,7 @@ class MainWindow(QWidget):
 
         self.initUI()
 
+# check push
     def initUI(self):
         layout = QHBoxLayout()
 
