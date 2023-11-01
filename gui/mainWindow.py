@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QVBoxLayout
 from PyQt6.QtGui import QAction, QIcon
 
-from gui.windows.сontentWindow import ContentWindow
+from gui.windows.contentWindow import ContentWindow
 
 class MainWindow(QWidget):
     def __init__(self):
