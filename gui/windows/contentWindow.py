@@ -52,7 +52,7 @@ class ContentWindow(QWidget):
         self.filter_btn.clicked.connect(self.apply_filter)
         
         self.reset_btn.clicked.connect(self.reset_content)
-        self.scr_shot_btn.clicked.connect(self.screenshot1)
+        self.scr_shot_btn.clicked.connect(self.take_screenshot)
 
         self.main_layout.addWidget(self.label, 0, 0, 3, 2)
         self.main_layout.addWidget(self.image_btn, 3, 0, 1, 1)
@@ -144,6 +144,8 @@ class ContentWindow(QWidget):
         else:
             print('нет изображения с фильтром')
 
+    def take_screenshot(self):
+        keyboard.send('shift+windows+s')
     #* IMAGES END ==============================
     
 
@@ -220,6 +222,3 @@ class ContentWindow(QWidget):
         self.cv_video_capture.release()
         self.cv_video_capture = cv2.VideoCapture()
         self.label.setPixmap(QPixmap())
-
-    def screenshot1(self):
-        keyboard.send('shift+windows+s')
