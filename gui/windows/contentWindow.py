@@ -43,6 +43,8 @@ class ContentWindow(QWidget):
         self.setWindowTitle('Content')
         self.setGeometry(200, 200, 200, 200)
 
+        
+
 
 
     def open_image(self):
@@ -89,3 +91,4 @@ class ContentWindow(QWidget):
                     break
 
             cap.release()
+        
