@@ -14,20 +14,23 @@ class ColorWindow(QWidget):
         
         color_button = QPushButton("Color", self)
         
-        state = {"index": 0, "filters": [cv2.COLOR_BGR2RGB, cv2.COLOR_BGR2HSV, cv2.COLOR_BGR2GRAY]}
+        state = {"RGB": cv2.COLOR_BGR2RGB, "HSV": cv2.COLOR_BGR2HSV, "GRAY": cv2.COLOR_BGR2GRAY}
 
         menu = QMenu()
         menu.triggered.connect(lambda x: print(x.text()))
 
         color_button.setMenu(menu)
-        self.add_menu(state["filters"], menu)
+        self.add_menu(state, menu)
 
 
     def menu_triggered(self, action):
-        print(action.text())
+        color = action.text()
+        if color in self.colors_dict:
+            filter_value = self.colors_dict[color]
+            print(f"Selected Color: {color}, Filter Value: {filter_value}")
 
     def add_menu(self, data, menu_obj):
-        for index, item in enumerate(data):
-            action = menu_obj.addAction(str(index))
+        self.colors_dict = data  # Сохраняем словарь для использования в обработчике
+        for color in data.keys():
+            action = menu_obj.addAction(color)
             action.setIconVisibleInMenu(False)
-            action.setData(index)
