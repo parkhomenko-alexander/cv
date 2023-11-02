@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QVBoxLayout
 from PyQt6.QtGui import QAction, QIcon
 
-from gui.windows.contentWindow import ContentWindow
+from gui.windows.сontentWindow import ContentWindow
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -9,7 +9,6 @@ class MainWindow(QWidget):
 
         self.initUI()
 
-# check push 2
     def initUI(self):
         layout = QHBoxLayout()
 

@@ -3,7 +3,7 @@ from PyQt6.QtGui import QPixmap, QImage
 from PyQt6.QtCore import QTimer, Qt
 
 import cv2
-import numpy as np
+import keyboard
 
 class ContentWindow(QWidget):
     def __init__(self, fps=20):
@@ -33,6 +33,7 @@ class ContentWindow(QWidget):
         self.video_btn = QPushButton("video")
         self.play_pause_btn = QPushButton("pause")
         self.filter_btn = QPushButton("aplly filter")
+        self.scr_shot_btn = QPushButton("scr_shot")
 
         self.reset_btn = QPushButton("reset")
 
@@ -50,7 +51,8 @@ class ContentWindow(QWidget):
         self.play_pause_btn.clicked.connect(self.play_pause_video)
         self.filter_btn.clicked.connect(self.apply_filter)
         
-        self.reset_btn.clicked.connect(self.reset_content) 
+        self.reset_btn.clicked.connect(self.reset_content)
+        self.scr_shot_btn.clicked.connect(self.screenshot1)
 
         self.main_layout.addWidget(self.label, 0, 0, 3, 2)
         self.main_layout.addWidget(self.image_btn, 3, 0, 1, 1)
@@ -62,7 +64,7 @@ class ContentWindow(QWidget):
         self.main_layout.addWidget(self.filter_btn, 5, 0, 1, 2)
 
         self.main_layout.addWidget(self.reset_btn, 6, 0, 1, 2)
-        
+        self.main_layout.addWidget(self.scr_shot_btn, 7, 0, 1, 2)
 
         self.setLayout(self.main_layout)
 
@@ -218,3 +220,6 @@ class ContentWindow(QWidget):
         self.cv_video_capture.release()
         self.cv_video_capture = cv2.VideoCapture()
         self.label.setPixmap(QPixmap())
+
+    def screenshot1(self):
+        keyboard.send('shift+windows+s')
