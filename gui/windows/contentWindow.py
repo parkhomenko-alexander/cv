@@ -128,6 +128,7 @@ class ContentWindow(QWidget):
             q_image = self.convert_cv_to_qimage(img_for_display)
             self.label.setPixmap(QPixmap.fromImage(q_image))
 
+    
     def convert_cv_to_qimage(self, cv_image):
         height, width, *channel = cv_image.shape
         print(state.selected_filter)
