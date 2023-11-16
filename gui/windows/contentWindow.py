@@ -55,7 +55,7 @@ class ContentWindow(QWidget):
 
         self.initUI()
 
-        
+        # aa
 
     def initUI(self):
         self.number_input.focusOutEvent = self.focus_out_event
