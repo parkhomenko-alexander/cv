@@ -117,7 +117,11 @@ class ContentWindow(QWidget):
                     # print(new_w, new_h, channel)
                     resized_img = self.resize_image(new_w, new_h)
                     self.cv_original_image = resized_img
-                    self.display_image(self.cv_original_image)
+                    if self.is_filter_toggled:
+                        self.cv_filtered_image = state.filter_image(self.cv_original_image)
+                        self.display_image(self.cv_filtered_image)
+                    else:
+                        self.display_image(self.cv_original_image)
 
     def display_image(self, img_for_display):
         if img_for_display is not None:

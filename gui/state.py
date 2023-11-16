@@ -23,10 +23,7 @@ class State:
             filtered[:, :, 1] = 0
             return filtered
         if self.selected_filter == "интенсивность":
-            filtered = image.copy()
-            filtered[:, :, 0] = image[:, :, 0] // 3  
-            filtered[:, :, 1] = image[:, :, 1] // 3  
-            filtered[:, :, 2] = image[:, :, 2] // 3  
+            filtered = image.copy()//3
             return filtered
         if self.selected_filter == "яркость":
             return cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
