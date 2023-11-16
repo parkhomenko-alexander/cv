@@ -4,6 +4,8 @@ from PyQt6.QtGui import QAction, QIcon
 from gui.windows.contentWindow import ContentWindow
 from gui.windows.colorWindow import ColorWindow
 
+
+
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -28,7 +30,7 @@ class MainWindow(QWidget):
         layout.addWidget(filter_button)
         
         self.setLayout(layout)
-
+        self.setGeometry(200,100, 150, 50)
         self.setWindowTitle('IVP')
         self.show()
 
@@ -37,5 +39,6 @@ class MainWindow(QWidget):
         self.content_screen.show()
     
     def open_color_window(self):
-        self.content_screen = ColorWindow()
-        self.content_screen.show()
+        self.color_screen = ColorWindow()
+        self.color_screen.setGeometry(620, 200, 300, 50)
+        self.color_screen.show()

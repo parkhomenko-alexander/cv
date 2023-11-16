@@ -1,12 +1,19 @@
-from PyQt6.QtWidgets import QWidget, QPushButton, QLabel, QFileDialog, QGridLayout
+from PyQt6.QtWidgets import QWidget, QPushButton, QLabel, QFileDialog, QGridLayout, QLineEdit
 from PyQt6.QtGui import QPixmap, QImage
 from PyQt6.QtCore import QTimer, Qt
 
 import cv2
 import keyboard
+import numpy as np
+import time
+from PIL import ImageGrab
+
+# from colorWindow import state
+from ..state import state
+
 
 class ContentWindow(QWidget):
-    def __init__(self, fps=20):
+    def __init__(self, fps=500):
         super().__init__()
 
         # говорит cupture дай мне кадр дай мне кадр очередной
@@ -15,6 +22,8 @@ class ContentWindow(QWidget):
         self.cv_video_capture = cv2.VideoCapture()
         self.is_video_play = False
         self.cv_video_path = None
+
+        # self.filters_state = state
 
         self.cv_original_image = None
         self.cv_filtered_image = None
@@ -25,6 +34,11 @@ class ContentWindow(QWidget):
         self.screen_w = 400
         self.screen_h = 400
 
+        self.number_input = QLineEdit(self)
+        self.number_input.setPlaceholderText(f"Default fps: {self.fps}")
+        self.number_input.setReadOnly(True)
+
+
         self.label = QLabel()
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -32,7 +46,7 @@ class ContentWindow(QWidget):
         self.image_save_btn = QPushButton("save filtered image")
         self.video_btn = QPushButton("video")
         self.play_pause_btn = QPushButton("pause")
-        self.filter_btn = QPushButton("aplly filter")
+        self.filter_btn = QPushButton("filter rgb")
         self.scr_shot_btn = QPushButton("scr_shot")
 
         self.reset_btn = QPushButton("reset")
@@ -44,6 +58,10 @@ class ContentWindow(QWidget):
         
 
     def initUI(self):
+        self.number_input.focusOutEvent = self.focus_out_event
+        self.number_input.mouseDoubleClickEvent = self.inputMouseDoubleClickEvent 
+        self.number_input.textChanged.connect(self.on_text_changed)
+
         self.image_btn.clicked.connect(self.load_image)
         self.image_save_btn.clicked.connect(self.save_filtered_image)
 
@@ -65,30 +83,13 @@ class ContentWindow(QWidget):
 
         self.main_layout.addWidget(self.reset_btn, 6, 0, 1, 2)
         self.main_layout.addWidget(self.scr_shot_btn, 7, 0, 1, 2)
+        self.main_layout.addWidget(self.number_input, 8, 0, 1, 2)
+
 
         self.setLayout(self.main_layout)
 
         self.setWindowTitle('Content')
         self.setGeometry(200, 200, self.screen_w, self.screen_h)
-
-    # def resizeEvent(self, event):
-    #     width = event.size().width()
-    #     height = event.size().height()
-        
-    #     # if (abs(width - self.screen_w)) != (abs(height - self.screen_h)):
-    #     #     return 
-
-    #     w_aspect = width / self.screen_w
-    #     h_aspect = height / self.screen_h
-
-    #     self.screen_w = width
-    #     self.screen_h = height
-
-    #     if self.cv_original_image is not None:
-    #         h, w,  *rest = self.cv_original_image.shape
-    #         self.resize_image(int(w*w_aspect), int(h*h_aspect))
-
-    #         self.display_image()
 
 
     #* IMAGES ==============================
@@ -122,12 +123,17 @@ class ContentWindow(QWidget):
         if img_for_display is not None:
             q_image = self.convert_cv_to_qimage(img_for_display)
             self.label.setPixmap(QPixmap.fromImage(q_image))
-            # self.label.setScaledContents(True)
 
     def convert_cv_to_qimage(self, cv_image):
-        height, width, channel = cv_image.shape
-        bytes_per_line = 3 * width
-        return QImage(cv_image.data, width, height, bytes_per_line, QImage.Format.Format_RGB888)
+        height, width, *channel = cv_image.shape
+        print(state.selected_filter)
+        if self.is_filter_toggled and state.selected_filter=="яркость":
+            bytes_per_line = 1 * width
+            return QImage(cv_image.data, width, height, bytes_per_line, QImage.Format.Format_Grayscale8)
+        else:
+            bytes_per_line = 3 * width
+            return QImage(cv_image.data, width, height, bytes_per_line, QImage.Format.Format_RGB888)
+
 
     def resize_image(self, new_w, new_h,):
         self.cv_original_image = cv2.resize(self.cv_original_image, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
@@ -146,6 +152,15 @@ class ContentWindow(QWidget):
 
     def take_screenshot(self):
         keyboard.send('shift+windows+s')
+        time.sleep(3)
+        clipboard_image = ImageGrab.grabclipboard()
+        if clipboard_image:
+            clipboard_array = np.array(clipboard_image)
+            clipboard_rgb = cv2.cvtColor(clipboard_array, cv2.COLOR_RGBA2RGB)
+            self.cv_original_image = clipboard_rgb
+            self.display_image(self.cv_original_image)
+        else:
+            print('No image found on the clipboard')
     #* IMAGES END ==============================
     
 
@@ -164,6 +179,7 @@ class ContentWindow(QWidget):
             self.is_video_play = False
     
     def load_video(self):
+        self.reset_content()
         dialog = QFileDialog()
         dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
         dialog.setDirectory(r'C:\images')
@@ -181,14 +197,18 @@ class ContentWindow(QWidget):
             if ret:
                 # Конвертируем кадр в формат QImage
                 if self.is_filter_toggled: 
-                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    frame = state.filter_image(frame)
                 else:
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
 
-                h, w, ch = frame.shape
-                bytes_per_line = ch * w
-                qt_image = QImage(frame.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
+                if self.is_filter_toggled and state.selected_filter=="яркость":
+                    h, w, *ch = frame.shape
+                    qt_image = QImage(frame.data, w, h, w, QImage.Format.Format_Grayscale8)
+                else:
+                    h, w, ch = frame.shape
+                    bytes_per_line = ch * w
+                    qt_image = QImage(frame.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
 
                 # Отображаем кадр в QLabel
                 pixmap = QPixmap.fromImage(qt_image)
@@ -201,19 +221,42 @@ class ContentWindow(QWidget):
 
     #* FILTERS ==============================
     def apply_filter(self):
-        if self.cv_original_image is None:
-            print('изображение не загружено')
+        # 0 0 1
+        # 1 1 1
+        # 0 1 0
+        # 1 0 0
+        if self.cv_video_capture is None and self.cv_original_image is None:
+            print('исходники не загружены')
             return
 
         if not self.is_filter_toggled:
             self.is_filter_toggled = True
-            self.cv_filtered_image = cv2.GaussianBlur(self.cv_original_image, (15, 15), 0)
-            self.display_image(self.cv_filtered_image)
+            
+            if self.cv_original_image is not None:
+                self.cv_filtered_image = state.filter_image(self.cv_original_image)
+                self.display_image(self.cv_filtered_image)
+            self.filter_btn.setText("filter " + state.selected_filter)
         else:
             self.is_filter_toggled = False
-            self.display_image(self.cv_original_image)
+
+            if self.cv_original_image is not None:
+                self.display_image(self.cv_original_image)
+            self.filter_btn.setText("filter rgb")
     #* FILTERS END ==============================
 
+    def inputMouseDoubleClickEvent(self, event):
+        print('zxczczxczx')
+        self.number_input.setReadOnly(False) 
+            
+    def focus_out_event(self, event):
+        self.number_input.setReadOnly(True)
+
+    def on_text_changed(self, text):
+        try:
+            self.fps = int(text)  # Convert the input text to a number
+            self.frame_timer.start(int(1000//self.fps))
+        except ValueError:
+            self.number = None  # Reset the variable if it's not a valid number
 
     def reset_content(self):
         self.cv_original_image = None
@@ -222,3 +265,4 @@ class ContentWindow(QWidget):
         self.cv_video_capture.release()
         self.cv_video_capture = cv2.VideoCapture()
         self.label.setPixmap(QPixmap())
+        self.cv_original_image = None
