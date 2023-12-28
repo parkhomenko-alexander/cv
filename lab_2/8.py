@@ -3,6 +3,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 def generate_white_noise(shape, a=0, b=1):
     """
@@ -29,7 +30,17 @@ def main():
     plt.imshow(white_noise, cmap='gray', interpolation='nearest')
     plt.colorbar()
     plt.title('Белый шум с равномерным распределением')
+
+    # Создаем папку "screens", если ее нет
+    screens_folder = "screens"
+    os.makedirs(screens_folder, exist_ok=True)
+
+    # Сохраняем изображение в папку "screens"
+    image_path = os.path.join(screens_folder, "white_noise_image.png")
+    plt.savefig(image_path)
+
     plt.show()
 
 if __name__ == "__main__":
     main()
+
