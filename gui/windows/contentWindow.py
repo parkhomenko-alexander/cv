@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QWidget, QPushButton, QLabel, QFileDialog, QGridLayout, QLineEdit
 from PyQt6.QtGui import QPixmap, QImage
-from PyQt6.QtCore import QTimer, Qt
+from PyQt6.QtCore import QTimer, Qt, pyqtSlot
 
 import cv2
 import keyboard
@@ -8,12 +8,16 @@ import numpy as np
 import time
 from PIL import ImageGrab
 
-# from colorWindow import state
+from gui.config import config
+from gui.windows.modelingConfigWindow import ModelingConfigWindow
+
 from ..state import state
+
+import sys
 
 
 class ContentWindow(QWidget):
-    def __init__(self, fps=500):
+    def __init__(self, fps=config.fps):
         super().__init__()
 
         # говорит cupture дай мне кадр дай мне кадр очередной
@@ -31,8 +35,8 @@ class ContentWindow(QWidget):
         # self.prev_image_filter = 
 
 
-        self.screen_w = 400
-        self.screen_h = 400
+        self.screen_w = config.screen_w
+        self.screen_h = config.screen_h
 
         self.number_input = QLineEdit(self)
         self.number_input.setPlaceholderText(f"Default fps: {self.fps}")
@@ -53,11 +57,17 @@ class ContentWindow(QWidget):
 
         self.main_layout = QGridLayout()
 
+
+        # self.modeling_config_window = ModelingConfigWindow
+    
+
         self.initUI()
 
         
 
     def initUI(self):
+        # self.modeling_config_window.image_generated.connect(self.display_image)
+
         self.number_input.focusOutEvent = self.focus_out_event
         self.number_input.mouseDoubleClickEvent = self.inputMouseDoubleClickEvent 
         self.number_input.textChanged.connect(self.on_text_changed)
@@ -93,7 +103,12 @@ class ContentWindow(QWidget):
 
 
     #* IMAGES ==============================
-    def load_image(self):
+    def load_image(self, image):
+        if  image is not False: 
+            self.cv_original_image = image
+            self.display_image(self.cv_original_image)
+            return 
+        
         self.cv_video_capture = cv2.VideoCapture()
         if self.frame_timer.isActive():
             self.frame_timer.stop()
@@ -114,7 +129,6 @@ class ContentWindow(QWidget):
                     scale_factor = 1
                     new_w = 400
                     new_h = int(new_w * height / width) 
-                    # print(new_w, new_h, channel)
                     resized_img = self.resize_image(new_w, new_h)
                     self.cv_original_image = resized_img
                     if self.is_filter_toggled:
@@ -122,15 +136,15 @@ class ContentWindow(QWidget):
                         self.display_image(self.cv_filtered_image)
                     else:
                         self.display_image(self.cv_original_image)
-
+    
     def display_image(self, img_for_display):
         if img_for_display is not None:
             q_image = self.convert_cv_to_qimage(img_for_display)
             self.label.setPixmap(QPixmap.fromImage(q_image))
+    
 
     def convert_cv_to_qimage(self, cv_image):
         height, width, *channel = cv_image.shape
-        print(state.selected_filter)
         if self.is_filter_toggled and state.selected_filter=="яркость":
             bytes_per_line = 1 * width
             return QImage(cv_image.data, width, height, bytes_per_line, QImage.Format.Format_Grayscale8)
@@ -176,14 +190,20 @@ class ContentWindow(QWidget):
             self.play_pause_btn.setText('pause')
             self.frame_timer.timeout.connect(self.display_video)
             self.frame_timer.start(int(1000//self.fps))
-            self.is_video_play = True
         else:
+            self.frame_timer.timeout.disconnect(self.display_video)
             self.frame_timer.stop()
             self.play_pause_btn.setText('play')
-            self.is_video_play = False
+        self.is_video_play = not self.is_video_play
     
-    def load_video(self):
+    def load_video(self, path):
         self.reset_content()
+        if path is not False:
+            self.cv_video_path = sys.path[1] + "/" + path
+            self.cv_video_capture.open(self.cv_video_path)
+            self.play_pause_video()
+            return 
+        
         dialog = QFileDialog()
         dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
         dialog.setDirectory(r'C:\images')
