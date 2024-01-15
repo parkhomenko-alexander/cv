@@ -1,6 +1,6 @@
-from PyQt6.QtWidgets import QWidget, QPushButton, QLabel, QFileDialog, QGridLayout, QLineEdit
-from PyQt6.QtGui import QPixmap, QImage
-from PyQt6.QtCore import QTimer, Qt, pyqtSlot
+from PyQt6.QtWidgets import QWidget, QPushButton, QLabel, QFileDialog, QGridLayout, QLineEdit, QMenu
+from PyQt6.QtGui import QPixmap, QImage, QAction
+from PyQt6.QtCore import QTimer, Qt
 
 import cv2
 import keyboard
@@ -38,6 +38,15 @@ class ContentWindow(QWidget):
         self.screen_w = config.screen_w
         self.screen_h = config.screen_h
 
+        self.analyze_btn = QPushButton("Анализ", self)
+
+        self.menu_bar = menu = QMenu()
+        self.statistics_action = QAction("Статистики", self)
+        self.statistics = self.menu_bar.addAction(self.statistics_action)
+        self.analyze_btn.setMenu(menu)
+
+
+
         self.number_input = QLineEdit(self)
         self.number_input.setPlaceholderText(f"Default fps: {self.fps}")
         self.number_input.setReadOnly(True)
@@ -45,6 +54,7 @@ class ContentWindow(QWidget):
 
         self.label = QLabel()
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.label.setStyleSheet("margin-top: 20px;")
 
         self.image_btn = QPushButton("img")
         self.image_save_btn = QPushButton("save filtered image")
@@ -58,15 +68,16 @@ class ContentWindow(QWidget):
         self.main_layout = QGridLayout()
 
 
-        # self.modeling_config_window = ModelingConfigWindow
-    
-
         self.initUI()
 
         
 
     def initUI(self):
         # self.modeling_config_window.image_generated.connect(self.display_image)
+
+
+
+
 
         self.number_input.focusOutEvent = self.focus_out_event
         self.number_input.mouseDoubleClickEvent = self.inputMouseDoubleClickEvent 
@@ -81,6 +92,8 @@ class ContentWindow(QWidget):
         
         self.reset_btn.clicked.connect(self.reset_content)
         self.scr_shot_btn.clicked.connect(self.take_screenshot)
+
+        self.statistics_action.triggered.connect(self.calculate_statistics)
 
         self.main_layout.addWidget(self.label, 0, 0, 3, 2)
         self.main_layout.addWidget(self.image_btn, 3, 0, 1, 1)
@@ -267,6 +280,13 @@ class ContentWindow(QWidget):
                 self.display_image(self.cv_original_image)
             self.filter_btn.setText("filter rgb")
     #* FILTERS END ==============================
+
+
+    #* ANALYZE ==============================
+    def calculate_statistics(self):
+        print("analyze") 
+    #* ANALYZE END ==============================
+
 
     def inputMouseDoubleClickEvent(self, event):
         print('zxczczxczx')
