@@ -50,7 +50,7 @@ def plot_combined_histogram(histograms, name, max_size=400):
         return combined_hist_image
 
 class ContentWindow(QWidget):
-    histograms = pyqtSignal(np.ndarray)
+    histograms = pyqtSignal(np.ndarray, list, list, list)
 
     def __init__(self, fps=config.fps):
         super().__init__()
@@ -348,10 +348,72 @@ class ContentWindow(QWidget):
 
         hist = plot_combined_histogram(histograms, "generated_img/hist.png")
 
-        self.histograms.emit(hist)
+        return hist 
+    
+    def calculate_means(self, image):
+        b, g, r = cv2.split(image)
 
+        means = [
+            {
+                "val": int(np.mean(b)),
+                "name": "B"
+            },
+            {
+                "val": int(np.mean(g)),
+                "name": "G"
+            }, {
+                "val": int(np.mean(r)),
+                "name": "R"
+            }
+        ]
+
+        return means
+    
+    def calculate_variance(self, image):
+        b, g, r = cv2.split(image)
+
+        variance = [
+            {
+                "val": int(np.var(b)),
+                "name": "B"
+            },
+            {
+                "val": int(np.var(g)),
+                "name": "G"
+            }, {
+                "val": int(np.var(r)),
+                "name": "R"
+            }
+        ]
+
+        return variance
+    
+    def calculate_std(self, image):
+        b, g, r = cv2.split(image)
+
+        vals = [
+            {
+                "val": int(np.std(b)),
+                "name": "B"
+            },
+            {
+                "val": int(np.std(g)),
+                "name": "G"
+            }, {
+                "val": int(np.std(r)),
+                "name": "R"
+            }
+        ]
+
+        return vals
+    
     def calculate_statistics(self):
-        self.calculate_histograms(self.cv_original_image)
+        hist = self.calculate_histograms(self.cv_original_image)
+        means = self.calculate_means(self.cv_original_image)
+        varsiance = self.calculate_variance(self.cv_original_image)
+        std = self.calculate_std(self.cv_original_image)
+
+        self.histograms.emit(hist, means, varsiance, std)
 
         self.analyze_window.show()
         print("analyze") 
