@@ -1,6 +1,8 @@
 from PyQt6.QtWidgets import QWidget, QPushButton, QLabel, QFileDialog, QGridLayout, QLineEdit, QMenu
 from PyQt6.QtGui import QPixmap, QImage, QAction
-from PyQt6.QtCore import QTimer, Qt
+from PyQt6.QtCore import QTimer, Qt, pyqtSignal
+
+import matplotlib.pyplot as plt
 
 import cv2
 import keyboard
@@ -9,14 +11,47 @@ import time
 from PIL import ImageGrab
 
 from gui.config import config
-from gui.windows.modelingConfigWindow import ModelingConfigWindow
+from gui.windows.analyzeWindow import AnalyzeWindow
 
 from ..state import state
 
 import sys
 
+def plot_combined_histogram(histograms, name, max_size=400):
+
+        def resize_image(image, max_size):
+            height, width, _ = image.shape
+            aspect_ratio = width / height
+
+            if width > height:
+                new_width = max_size
+                new_height = int(new_width / aspect_ratio)
+            else:
+                new_height = max_size
+                new_width = int(new_height * aspect_ratio)
+
+            resized_image = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_AREA)
+            return resized_image
+
+        for h in histograms:
+            plt.plot(h["hist"], color=h["color"], label=h["label"])
+        
+        plt.xlabel('Pixel Value')
+        plt.ylabel('Frequency')
+        plt.legend()
+
+        # Save the combined histogram as an image with the specified maximum size
+        combined_hist_image_path = name
+        plt.savefig(combined_hist_image_path, bbox_inches='tight', pad_inches=0, dpi=100)
+        plt.clf()  # Clear the figure for the next plot
+
+        combined_hist_image = cv2.imread(combined_hist_image_path)
+        combined_hist_image = resize_image(combined_hist_image, max_size)
+        return combined_hist_image
 
 class ContentWindow(QWidget):
+    histograms = pyqtSignal(np.ndarray)
+
     def __init__(self, fps=config.fps):
         super().__init__()
 
@@ -37,6 +72,9 @@ class ContentWindow(QWidget):
 
         self.screen_w = config.screen_w
         self.screen_h = config.screen_h
+
+
+        self.analyze_window = AnalyzeWindow()
 
         self.analyze_btn = QPushButton("Анализ", self)
 
@@ -76,7 +114,7 @@ class ContentWindow(QWidget):
         # self.modeling_config_window.image_generated.connect(self.display_image)
 
 
-
+        self.histograms.connect(self.analyze_window.display_params)
 
 
         self.number_input.focusOutEvent = self.focus_out_event
@@ -283,7 +321,39 @@ class ContentWindow(QWidget):
 
 
     #* ANALYZE ==============================
+    def calculate_histograms(self, image):
+        b, g, r = cv2.split(image)
+        histograms = []
+        name = "generated_img/hist.png"
+        hist_b = cv2.calcHist([b], [0], None, [256], [0, 256])
+        hist_g = cv2.calcHist([g], [0], None, [256], [0, 256])
+        hist_r = cv2.calcHist([r], [0], None, [256], [0, 256])
+        histograms = [
+            {
+                "hist": hist_b,
+                "color": 'blue', 
+                "label":'Blue Channel'
+            },
+            {
+                "hist": hist_g,
+                "color": 'green', 
+                "label":'Green Channel'
+            },
+            {
+                "hist": hist_r,
+                "color": 'red', 
+                "label":'Red Channel'
+            }
+        ]
+
+        hist = plot_combined_histogram(histograms, "generated_img/hist.png")
+
+        self.histograms.emit(hist)
+
     def calculate_statistics(self):
+        self.calculate_histograms(self.cv_original_image)
+
+        self.analyze_window.show()
         print("analyze") 
     #* ANALYZE END ==============================
 
