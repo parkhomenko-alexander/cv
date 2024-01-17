@@ -7,6 +7,8 @@ class State:
     selected_filter = "rgb"
 
     def filter_image(self, image):
+        if self.selected_filter == "rgb": 
+            return image 
         if self.selected_filter == "red":
             filtered = image.copy()
             filtered[:, :, 1] = 0
@@ -29,3 +31,4 @@ class State:
             return cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
 state = State()
+

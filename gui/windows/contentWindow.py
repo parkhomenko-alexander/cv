@@ -9,6 +9,7 @@ import keyboard
 import numpy as np
 import time
 from PIL import ImageGrab
+from scipy.stats import skew, kurtosis
 
 from gui.config import config
 from gui.windows.analyzeWindow import AnalyzeWindow
@@ -33,6 +34,8 @@ def plot_combined_histogram(histograms, name, max_size=400):
             resized_image = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_AREA)
             return resized_image
 
+        plt.figure()
+
         for h in histograms:
             plt.plot(h["hist"], color=h["color"], label=h["label"])
         
@@ -47,10 +50,13 @@ def plot_combined_histogram(histograms, name, max_size=400):
 
         combined_hist_image = cv2.imread(combined_hist_image_path)
         combined_hist_image = resize_image(combined_hist_image, max_size)
+        plt.close()
+
         return combined_hist_image
 
 class ContentWindow(QWidget):
-    histograms = pyqtSignal(np.ndarray, list, list, list)
+    histograms = pyqtSignal(np.ndarray, list, list, list, list, list, list, 
+                            list, list, list, list, list, str)
 
     def __init__(self, fps=config.fps):
         super().__init__()
@@ -64,6 +70,7 @@ class ContentWindow(QWidget):
 
         # self.filters_state = state
 
+        self.current_image = None
         self.cv_original_image = None
         self.cv_filtered_image = None
         self.is_filter_toggled = False
@@ -174,6 +181,7 @@ class ContentWindow(QWidget):
             if filenames:
                 image = cv2.imread(filenames[0])
                 self.cv_original_image = image
+                self.current_image = cv2.cvtColor(self.cv_original_image, cv2.COLOR_BGR2GRAY)
                 if image is not None:
                     # v rgb
                     height, width, channel = image.shape
@@ -241,6 +249,15 @@ class ContentWindow(QWidget):
             self.play_pause_btn.setText('pause')
             self.frame_timer.timeout.connect(self.display_video)
             self.frame_timer.start(int(1000//self.fps))
+
+            ret, frame = self.cv_video_capture.read()
+            self.current_image = frame
+            self.cv_filtered_image = state.filter_image(frame)
+            if state.selected_filter == "яркость":
+                self.current_image = frame
+            else:
+                self.current_image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
         else:
             self.frame_timer.timeout.disconnect(self.display_video)
             self.frame_timer.stop()
@@ -266,6 +283,7 @@ class ContentWindow(QWidget):
             self.cv_video_capture.open(self.cv_video_path)
             self.play_pause_video()
 
+        
     def display_video(self):
             ret, frame = self.cv_video_capture.read()
 
@@ -300,6 +318,8 @@ class ContentWindow(QWidget):
         # 1 1 1
         # 0 1 0
         # 1 0 0
+        if state.selected_filter == "rgb":
+            return 
         if self.cv_video_capture is None and self.cv_original_image is None:
             print('исходники не загружены')
             return
@@ -311,6 +331,12 @@ class ContentWindow(QWidget):
                 self.cv_filtered_image = state.filter_image(self.cv_original_image)
                 self.display_image(self.cv_filtered_image)
             self.filter_btn.setText("filter " + state.selected_filter)
+            if state.selected_filter == "яркость":
+                self.current_image = self.cv_filtered_image
+            else:
+                self.current_image = cv2.cvtColor(self.cv_filtered_image, cv2.COLOR_BGR2GRAY)
+
+
         else:
             self.is_filter_toggled = False
 
@@ -322,8 +348,21 @@ class ContentWindow(QWidget):
 
     #* ANALYZE ==============================
     def calculate_histograms(self, image):
-        b, g, r = cv2.split(image)
         histograms = []
+
+        if True:
+            histograms = [
+                {
+                    "hist": cv2.calcHist([image], [0], None, [256], [0, 256]),
+                    "color": 'black', 
+                    "label":'Grayscale'
+                }
+            ]
+            hist = plot_combined_histogram(histograms, "generated_img/hist.png")
+            return hist
+            
+        b, g, r = cv2.split(image)
+
         name = "generated_img/hist.png"
         hist_b = cv2.calcHist([b], [0], None, [256], [0, 256])
         hist_g = cv2.calcHist([g], [0], None, [256], [0, 256])
@@ -351,8 +390,17 @@ class ContentWindow(QWidget):
         return hist 
     
     def calculate_means(self, image):
-        b, g, r = cv2.split(image)
 
+        if True:
+            means = [
+                {
+                    "val": round(cv2.mean(image)[0],2),
+                    "name": "GS"
+                }
+            ]
+            return means
+
+        b, g, r = cv2.split(image)
         means = [
             {
                 "val": int(np.mean(b)),
@@ -369,9 +417,18 @@ class ContentWindow(QWidget):
 
         return means
     
-    def calculate_variance(self, image):
-        b, g, r = cv2.split(image)
+    def calculate_dispersion(self, image):
 
+        if True:
+            variance = [
+                {
+                    "val": round(np.var(image),2),
+                    "name": "GS"
+                }
+            ]
+            return variance
+        
+        b, g, r = cv2.split(image)
         variance = [
             {
                 "val": int(np.var(b)),
@@ -389,8 +446,17 @@ class ContentWindow(QWidget):
         return variance
     
     def calculate_std(self, image):
-        b, g, r = cv2.split(image)
 
+        if True:
+            vals = [
+                {
+                    "val": round(np.std(image),2),
+                    "name": "GS"
+                }
+            ]
+            return vals 
+        
+        b, g, r = cv2.split(image)
         vals = [
             {
                 "val": int(np.std(b)),
@@ -407,13 +473,258 @@ class ContentWindow(QWidget):
 
         return vals
     
-    def calculate_statistics(self):
-        hist = self.calculate_histograms(self.cv_original_image)
-        means = self.calculate_means(self.cv_original_image)
-        varsiance = self.calculate_variance(self.cv_original_image)
-        std = self.calculate_std(self.cv_original_image)
+    def calculate_skew(self, image):
 
-        self.histograms.emit(hist, means, varsiance, std)
+        if True:
+            vals = [
+                {
+                    "val": round(skew(image.flatten()),2),
+                    "name": "GS"
+                }
+            ]
+            return vals 
+        
+        b, g, r = cv2.split(image)
+        vals = [
+            {
+                "val": int(skew(b.flatten())),
+                "name": "B"
+            },
+            {
+                "val": int(skew(g.flatten())),
+                "name": "G"
+            }, {
+                "val": int(skew(r.flatten())),
+                "name": "R"
+            }
+        ]
+
+        return vals
+    
+    def calculate_kurtosis(self, image):
+
+        if True:
+            vals = [
+                {
+                    "val": round(kurtosis(image.flatten()),2),
+                    "name": "GS"
+                }
+            ]
+            return vals 
+    
+        b, g, r = cv2.split(image)
+        vals = [
+            {
+                "val": int(kurtosis(b.flatten(), fisher=True)),
+                "name": "B"
+            },
+            {
+                "val": int(kurtosis(g.flatten(), fisher=True)),
+                "name": "G"
+            }, {
+                "val": int(kurtosis(r.flatten(), fisher=True)),
+                "name": "R"
+            }
+        ]
+
+        return vals
+    
+    def calculate_variance(self, image):
+
+        if True:
+            mean_value = np.mean(image)
+            std_deviation = np.std(image)
+            vals = [
+                {
+                    "val": round((std_deviation / mean_value) * 100, 2),
+                    "name": "GS"
+                }
+            ]
+            return vals 
+        
+        b, g, r = cv2.split(image)
+        mean_b, mean_g, mean_r = np.mean(b), np.mean(g), np.mean(r)
+        std_dev_b, std_dev_g, std_dev_r = np.std(b), np.std(g), np.std(r)
+
+        cv_b = (std_dev_b / mean_b) * 100
+        cv_g = (std_dev_g / mean_g) * 100
+        cv_r = (std_dev_r / mean_r) * 100
+
+        vals = [
+            {
+                "val": int(cv_b),
+                "name": "B"
+            },
+            {
+                "val": int(cv_g),
+                "name": "G"
+            }, {
+                "val": int(cv_r),
+                "name": "R"
+            }
+        ]
+
+        return vals
+    
+    def calculate_min(self, image):
+
+        if True:
+            vals = [
+                {
+                    "val": round(np.min(image), 2),
+                    "name": "GS"
+                }
+            ]
+            return vals 
+
+        b, g, r = cv2.split(image)
+        vals = [
+            {
+                "val": np.min(b),
+                "name": "B"
+            },
+            {
+                "val": np.min(g),
+                "name": "G"
+            }, {
+                "val": np.min(r),
+                "name": "R"
+            }
+        ]
+
+        return vals
+    
+    def calculate_max(self, image):
+
+        if True:
+            vals = [
+                {
+                    "val": round(np.max(image), 2),
+                    "name": "GS"
+                }
+            ]
+            return vals 
+
+        b, g, r = cv2.split(image)
+        vals = [
+            {
+                "val": np.max(b),
+                "name": "B"
+            },
+            {
+                "val": np.max(g),
+                "name": "G"
+            }, {
+                "val": np.max(r),
+                "name": "R"
+            }
+        ]
+
+        return vals
+    
+    def calculate_percentile5(self, image):
+
+        if True:
+            vals = [
+                {
+                    "val": round(np.percentile(image, 5), 2),
+                    "name": "GS"
+                }
+            ]
+            return vals 
+
+        b, g, r = cv2.split(image)
+        vals = [
+            {
+                "val": np.percentile(b.flatten(), 5),
+                "name": "B"
+            },
+            {
+                "val": np.percentile(g.flatten(), 5),
+                "name": "G"
+            }, {
+                "val": np.percentile(r.flatten(), 5),
+                "name": "R"
+            }
+        ]
+
+        return vals
+    
+    def calculate_percentile95(self, image):
+
+        if True:
+            vals = [
+                {
+                    "val": round(np.percentile(image, 95), 2),
+                    "name": "GS"
+                }
+            ]
+            return vals 
+
+        b, g, r = cv2.split(image)
+        vals = [
+            {
+                "val": np.percentile(b.flatten(), 95),
+                "name": "B"
+            },
+            {
+                "val": np.percentile(g.flatten(), 95),
+                "name": "G"
+            }, {
+                "val": np.percentile(r.flatten(), 95),
+                "name": "R"
+            }
+        ]
+
+        return vals
+    
+    def calculate_median(self, image):
+
+        if True:
+            vals = [
+                {
+                    "val": round(np.median(image), 2),
+                    "name": "GS"
+                }
+            ]
+            return vals 
+
+        b, g, r = cv2.split(image)
+        vals = [
+            {
+                "val": np.median(b),
+                "name": "B"
+            },
+            {
+                "val": np.median(g),
+                "name": "G"
+            }, {
+                "val": np.median(r),
+                "name": "R"
+            }
+        ]
+
+        return vals
+
+
+    def calculate_statistics(self):
+        # hist = self.calculate_histograms(self.cv_original_image)
+        hist = self.calculate_histograms(self.current_image)
+        means = self.calculate_means(self.current_image)
+        varsiance = self.calculate_dispersion(self.current_image)
+        std = self.calculate_std(self.current_image)
+        skew = self.calculate_skew(self.current_image)
+        kurtosis = self.calculate_kurtosis(self.current_image)
+        variance = self.calculate_variance(self.current_image)
+        mins = self.calculate_min(self.current_image)
+        maxs = self.calculate_max(self.current_image)
+        percentil5 = self.calculate_percentile5(self.current_image)
+        percentil95 = self.calculate_percentile95(self.current_image)
+        median = self.calculate_median(self.current_image)
+
+        self.histograms.emit(hist, means, varsiance, std, skew, kurtosis,
+                             variance, mins, maxs, percentil5, percentil95,
+                             median, "generated_img/hist.png")
 
         self.analyze_window.show()
         print("analyze") 
