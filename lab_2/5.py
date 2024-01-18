@@ -1,12 +1,14 @@
-# Рисуем «Шахматная доска»
-# Код сгенерил chatgpt
 from PIL import Image, ImageDraw
 import os
 
 def create_chessboard(rows, cell_size, save_path=None):
+    # Размеры одной клетки в пикселях
+    cell_width = cell_size
+    cell_height = cell_size
+
     # Размеры доски в пикселях
-    width = rows * cell_size
-    height = rows * cell_size
+    width = rows * cell_width
+    height = rows * cell_height
 
     # Создаем новое изображение
     image = Image.new("RGB", (width, height), "white")
@@ -15,10 +17,10 @@ def create_chessboard(rows, cell_size, save_path=None):
     # Заполняем доску черными и белыми клетками
     for i in range(rows):
         for j in range(rows):
-            x = j * cell_size
-            y = i * cell_size
+            x = j * cell_width
+            y = i * cell_height
             color = "black" if (i + j) % 2 == 1 else "white"
-            draw.rectangle([x, y, x + cell_size, y + cell_size], fill=color)
+            draw.rectangle([x, y, x + cell_width, y + cell_height], fill=color)
 
     # Показываем изображение
     image.show()

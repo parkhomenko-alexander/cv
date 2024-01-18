@@ -1,5 +1,3 @@
-# Рисуем график "задержанного единичного скачка"
-# Код сгенерил chatgpt
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
@@ -8,12 +6,23 @@ import os
 m = 2
 x = np.arange(0, 10, 1)
 
-# Устанавливаем масштаб по оси x
-plt.vlines(x[x >= m], ymin=0, ymax=1, colors='b', linestyles='solid', label='y=1 при x >= {}'.format(m))
-plt.vlines(x[x < m], ymin=0, ymax=0, colors='b', linestyles='solid', label='y=0 при x < {}'.format(m))
+# Рисуем график для y=1 при x >= m
+plt.fill_between(x, 0, 1, where=(x >= m), color='b', alpha=0.3, label='y=1 при x >= {}'.format(m))
 
-# Уменьшаем масштаб по оси x в 2 раза
-plt.xlim(0, 10 / 2)
+# Рисуем график для y=0 при x < m
+plt.fill_between(x, 0, 0, where=(x < m), color='b', alpha=0.1, label='y=0 при x < {}'.format(m))
+
+# Получаем размеры графика по обеим осям
+x_half_size = (plt.xlim()[1] - plt.xlim()[0]) / 2
+y_half_size = (plt.ylim()[1] - plt.ylim()[0]) / 2
+
+# Смещаем начало координат в центр графика
+plt.xlim(-x_half_size, x_half_size)
+plt.ylim(-y_half_size, y_half_size)
+
+# Нарисовать оси x и y через центр графика
+plt.axhline(0, color='black',linewidth=0.5)
+plt.axvline(0, color='black',linewidth=0.5)
 
 # Дополнительные настройки для красоты
 plt.xlabel('x')
