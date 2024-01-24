@@ -11,6 +11,8 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab import rl_config
 
+import numpy as np
+import pandas as pd
 import cv2
 
 
@@ -19,11 +21,13 @@ class AnalyzeWindow(QWidget):
         super().__init__()
         self.screen_w = config.screen_w
         self.screen_h = config.screen_h
-
+        self.datas = pd.DataFrame(columns=["mean", "dispersion", "std", "skew", "kurtosis", 
+                                           "variance", "min", "max", "percentile5", "percentile95", "median", "hist"])
 
         self.histogram_label = QLabel(self)
+        
 
-        statistics_h, statistics_w = 100, 100
+        statistics_h, statistics_w = 60, 100
         self.means_label = QTextEdit(self)
         self.means_label.setReadOnly(True)  
         self.means_label.setFixedHeight(statistics_h)
@@ -112,10 +116,14 @@ class AnalyzeWindow(QWidget):
         pixmap = QPixmap.fromImage(q_image)
         return pixmap
     
+    def convert_f(self, elem):
+        return str(int(elem))
+    
     def display_params(self, hist, means, dispersion, std, skew, kurtosis,
                        variance, mins, maxs, percentil5, percentil95,
-                       median, hist_path):
+                       median, hist_path, freq):
         
+
         self.hist = hist
         self.means = means[0]["val"]
         self.dispersion = dispersion[0]["val"]
@@ -129,7 +137,15 @@ class AnalyzeWindow(QWidget):
         self.percentil95 = percentil95[0]["val"]
         self.median = median[0]["val"]
         self.hist_path = hist_path
+        
 
+        data = {
+            "mean": self.means , 
+            "dispersion": self.dispersion, "std": self.std, "skew": self.skew, "kurtosis": self.kurtosis,
+            "variance": self.variance, "min": self.mins, "max": self.maxs, "percentile5": self.percentil5, 
+            "percentile95": self.percentil95, "median": self.median , "hist": ", ".join(map(self.convert_f, freq))}
+        
+        self.datas.loc[len(self.datas)] = data 
 
         text = "Среднее\n"
         for m in means:
@@ -223,38 +239,42 @@ class AnalyzeWindow(QWidget):
     def show_file_dialog(self):
 
         file_dialog = QFileDialog()
-        file_dialog.setDefaultSuffix('pdf')
+        # file_dialog.setDefaultSuffix('pdf')
+        file_dialog.setDefaultSuffix("xlsx")
 
         file_dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
-        selected_file, _ = file_dialog.getSaveFileName(self, 'Save HTML', '', 'HTML Files (*.html)')
-
+        selected_file, _ = file_dialog.getSaveFileName(self, 'Save data', '', 'Xlsx Files (*.xlsx)')
+        
         if selected_file:
-            text_content = f'''
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Document</title>
-            </head>
-            <body>
-            <h1>Характеристики</h1>
-            <div>Среднее: {self.means}</div>
-            <div>Дисперсия: {self.dispersion}</div>
-            <div>Стд отклонение: {self.std}</div>
-            <div>Ассиметрия: {self.skew}</div>
-            <div>Эксцесс: {self.kurtosis}</div>
-            <div>Коэф вариации: {self.variance}</div>
-            <div>Мин: {self.mins}</div>
-            <div>Мах: {self.maxs}</div>
-            <div>Квантиль 5: {self.percentil5}</div>
-            <div>Квантиль 95: {self.percentil95}</div>
-            <div>Медиана: {self.median}</div>
-            <img src="C:/Users/saksa/Desktop/cvlabs/generated_img/hist.png" style="width: 600px; margin-top:20px" alt="">
-            </body>
-            </html>
-            '''
-            with open(selected_file, "w", encoding="utf-8") as fout:
-                fout.write(text_content)
+            self.datas.to_excel(selected_file, index=False)
+            print("saved")
+        # if selected_file:
+        #     text_content = f'''
+        #     <!DOCTYPE html>
+        #     <html lang="en">
+        #     <head>
+        #     <meta charset="UTF-8">
+        #     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        #     <title>Document</title>
+        #     </head>
+        #     <body>
+        #     <h1>Характеристики</h1>
+        #     <div>Среднее: {self.means}</div>
+        #     <div>Дисперсия: {self.dispersion}</div>
+        #     <div>Стд отклонение: {self.std}</div>
+        #     <div>Ассиметрия: {self.skew}</div>
+        #     <div>Эксцесс: {self.kurtosis}</div>
+        #     <div>Коэф вариации: {self.variance}</div>
+        #     <div>Мин: {self.mins}</div>
+        #     <div>Мах: {self.maxs}</div>
+        #     <div>Квантиль 5: {self.percentil5}</div>
+        #     <div>Квантиль 95: {self.percentil95}</div>
+        #     <div>Медиана: {self.median}</div>
+        #     <img src="C:/Users/saksa/Desktop/cvlabs/generated_img/hist.png" style="width: 600px; margin-top:20px" alt="">
+        #     </body>
+        #     </html>
+        #     '''
+        #     with open(selected_file, "w", encoding="utf-8") as fout:
+        #         fout.write(text_content)
         else:
             return

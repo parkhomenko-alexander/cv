@@ -58,5 +58,5 @@ class MainWindow(QWidget):
 
     def open_modeling_window(self):
         # self.modeling_window = ModelingConfigWindow()
-        self.modeling_window.setGeometry(620, 200, 300, 50)
+        self.modeling_window.setGeometry(620, 200, 600, 50)
         self.modeling_window.show()

@@ -1,6 +1,7 @@
 
-from PyQt6.QtWidgets import QWidget, QPushButton, QLineEdit, QGridLayout
+from PyQt6.QtWidgets import QWidget, QPushButton, QLineEdit, QGridLayout, QFileDialog
 from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtGui import QFont
 
 
 import cv2
@@ -17,24 +18,67 @@ class ModelingConfigWindow(QWidget):
     def __init__(self):
         super().__init__()
 
-        # self.image_generated = np.ndarray
+        self.image_m = None
+        self.image_v = None
 
         self.width, self.height = config.screen_w, config.screen_h 
 
         self.input_model = QLineEdit(self)
         self.input_model.setPlaceholderText(f"Model")
 
-        
+        font = QFont('Arial', 14)
+
         self.model_1 = QPushButton("Задержанный единичный импульс")
+        self.model_1_params = QLineEdit(self)
+        self.model_1.setFont(font)
+        self.model_1_params.setFont(font)
+
+        self.model_2_params = QLineEdit(self)
         self.model_2 = QPushButton("Задержанный единичный скачок")
+        self.model_2.setFont(font)
+        self.model_2_params.setFont(font)
+
+        self.model_3_params = QLineEdit(self)
         self.model_3 = QPushButton("Одиночный круг радиуса R")
+        self.model_3.setFont(font)
+        self.model_3_params.setFont(font)
+
+        self.model_4_params = QLineEdit(self)
         self.model_4 = QPushButton("Одиночный квадрат со стороной a")
+        self.model_4.setFont(font)
+        self.model_4_params.setFont(font)
+        
+        self.model_5_params = QLineEdit(self)
         self.model_5 = QPushButton("Шахматная доска")
+        self.model_5.setFont(font)
+        self.model_5_params.setFont(font)
+
+        self.model_6_params = QLineEdit(self)
         self.model_6 = QPushButton("Круги в узлах прямоугольной решетки")
+        self.model_6.setFont(font)
+        self.model_6_params.setFont(font)
+
+        self.model_7_params = QLineEdit(self)
         self.model_7 = QPushButton("Случайные  круги")
+        self.model_7.setFont(font)
+        self.model_7_params.setFont(font)
+
+        self.model_8_params = QLineEdit(self)
         self.model_8 = QPushButton("Белый шум с равномерным распределением")
+        self.model_8.setFont(font)
+        self.model_8_params.setFont(font)
+
+        self.model_9_params = QLineEdit(self)
         self.model_9 = QPushButton("Белый шум с нормальным распределением")
-        self.model_10 = QPushButton("Плоская гравитационная волна")
+        self.model_9.setFont(font)
+        self.model_9_params.setFont(font)
+
+        self.size = QLineEdit(self)
+        self.size.setPlaceholderText(f"Ширина кадра")
+        self.save_bnt = QPushButton("Сохранить")
+        self.save_bnt.setFont(font)
+        self.size.setFont(font)
+
 
         self.main_layout = QGridLayout()
 
@@ -52,22 +96,41 @@ class ModelingConfigWindow(QWidget):
         self.model_4.clicked.connect(self.generate_model_4)  
         self.model_5.clicked.connect(self.generate_model_5)  
         self.model_7.clicked.connect(self.generate_model_7)  
-        self.model_8.clicked.connect(self.generate_model_8)  
-        self.model_9.clicked.connect(self.generate_model_9)  
+        self.model_8.clicked.connect(self.generate_model_8)
+        self.model_9.clicked.connect(self.generate_model_9) 
+        self.save_bnt.clicked.connect(self.save)  
 
 
-        self.main_layout.addWidget(self.input_model, 0, 0, 1, 1)
+        self.main_layout.addWidget(self.model_1_params, 1, 0, 1, 1)
+        self.main_layout.addWidget(self.model_1, 1, 1, 1, 1)
+
+        self.main_layout.addWidget(self.model_2_params, 2, 0, 1, 1)
+        self.main_layout.addWidget(self.model_2, 2, 1, 1, 1)
         
-        self.main_layout.addWidget(self.model_1, 1, 0, 1, 1)
-        self.main_layout.addWidget(self.model_2, 2, 0, 1, 1)
-        self.main_layout.addWidget(self.model_3, 3, 0, 1, 1)
-        self.main_layout.addWidget(self.model_4, 4, 0, 1, 1)
-        self.main_layout.addWidget(self.model_5, 5, 0, 1, 1)
-        self.main_layout.addWidget(self.model_6, 6, 0, 1, 1)
-        self.main_layout.addWidget(self.model_7, 7, 0, 1, 1)
-        self.main_layout.addWidget(self.model_8, 8, 0, 1, 1)
-        self.main_layout.addWidget(self.model_9, 9, 0, 1, 1)
-        self.main_layout.addWidget(self.model_10, 10, 0, 1, 1)
+        self.main_layout.addWidget(self.model_3_params, 3, 0, 1, 1)
+        self.main_layout.addWidget(self.model_3, 3, 1, 1, 1)
+
+        self.main_layout.addWidget(self.model_4_params, 4, 0, 1, 1)
+        self.main_layout.addWidget(self.model_4, 4, 1, 1, 1)
+
+        self.main_layout.addWidget(self.model_5_params, 5, 0, 1, 1)
+        self.main_layout.addWidget(self.model_5, 5, 1, 1, 1)
+
+        self.main_layout.addWidget(self.model_6_params, 6, 0, 1, 1)
+        self.main_layout.addWidget(self.model_6, 6, 1, 1, 1)
+
+        self.main_layout.addWidget(self.model_7_params, 7, 0, 1, 1)
+        self.main_layout.addWidget(self.model_7, 7, 1, 1, 1)
+
+        self.main_layout.addWidget(self.model_8_params, 8, 0, 1, 1)
+        self.main_layout.addWidget(self.model_8, 8, 1, 1, 1)
+
+        self.main_layout.addWidget(self.model_9_params, 9, 0, 1, 1)
+        self.main_layout.addWidget(self.model_9, 9, 1, 1, 1)
+
+        self.main_layout.addWidget(self.size, 10, 0, 1, 1)
+        self.main_layout.addWidget(self.save_bnt, 10, 1, 1, 1)
+
 
         
         self.setLayout(self.main_layout)
@@ -77,30 +140,48 @@ class ModelingConfigWindow(QWidget):
         return params
     
     def generate_model_1(self):
-        params = self.parse_params()
+        params = self.model_1_params.text().split(" ")
 
         img = np.ones((self.height, self.width, 3), dtype=np.uint8) * 255
+        
+        cv2.line(img, (self.width // 2, 0), (self.width // 2, self.height), 0, 1)
+        cv2.line(img, (0, self.height // 2), (self.width, self.height // 2), 0, 1)
 
-        rectangle_height = 20
-        rectangle_width = 3
+        rectangle_height = 3
+        rectangle_width = 20
         i0 = int(params[0]) # x
         j0 = int(params[1]) # y
-        top_left = (i0, self.height - (j0 + rectangle_height))
-        bottom_right = (i0 + rectangle_width, self.height - j0)
-        rec = cv2.rectangle(img, top_left, bottom_right, 0, thickness=cv2.FILLED)
-        print(top_left, bottom_right, type(rec))
+        
+        center_x, center_y = self.width // 2, self.height // 2
+        x_position, y_position = center_x + i0, center_y + j0
+
+        rec = cv2.rectangle(img, (x_position, y_position), (x_position + rectangle_width, y_position + rectangle_height), 0, -1)
+        self.image_m = rec
+        self.image_v = None
         self.image_generated.emit(img)
 
     def generate_model_2(self):
-        params = self.parse_params()
+        params = self.model_2_params.text().split(" ")
 
         img = np.ones((self.height, self.width, 3), dtype=np.uint8) * 255
 
+
+        cv2.line(img, (self.width // 2, 0), (self.width // 2, self.height), 0, 1)
+        cv2.line(img, (0, self.height // 2), (self.width, self.height // 2), 0, 1)
+
         i0 = int(params[0]) # x
         j0 = int(params[1]) # y
-        top_left = (i0, self.height - j0)
-        bottom_right = (self.width, 0)
-        rec = cv2.rectangle(img, top_left, bottom_right, 0, thickness=cv2.FILLED)
+
+        center_x, center_y = self.width // 2, self.height // 2
+        x_position, y_position = center_x + i0, center_y + j0
+
+        start_x, start_y = center_x + i0, center_y + j0
+        end_x, end_y = self.width - 1, start_y
+        thickness = 2
+        line = cv2.line(img, (start_x, start_y), (end_x, end_y), 0, thickness)
+
+        self.image_m = line
+        self.image_v = None
         self.image_generated.emit(img)
 
     def generate_model_3(self):
@@ -117,11 +198,11 @@ class ModelingConfigWindow(QWidget):
         duration_sec = 5
         center = (frame_size[0] // 2, frame_size[1] // 2)
 
-        params = self.parse_params()
+        params = self.model_3_params.text().split(" ")
 
-        radius = 50
-        deltaR = int(params[0])
-        T0 = int(params[1])
+        radius = 100
+        deltaR = float(params[0])
+        T0 = float(params[1])
 
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         out = cv2.VideoWriter(output_video_path, fourcc, fps, frame_size, isColor=False)
@@ -131,6 +212,8 @@ class ModelingConfigWindow(QWidget):
             frame = generate_frame(radius, center, frame_size, deltaR, T0, t)
             out.write(frame)
 
+        self.image_m = None
+        self.image_v = output_video_path
         out.release()
         self.video_generate.emit(output_video_path)
 
@@ -149,7 +232,7 @@ class ModelingConfigWindow(QWidget):
         fps = config.fps
         duration_sec = 5
 
-        params = self.parse_params()
+        params = self.model_4_params.text().split(" ")
 
         side_length = 100
         delta_a = int(params[0])
@@ -163,11 +246,13 @@ class ModelingConfigWindow(QWidget):
             frame = generate_frame(side_length, frame_size, delta_a, T0, t)
             out.write(frame)
 
+        self.image_m = None
+        self.image_v = output_video_path
         out.release()
         self.video_generate.emit(output_video_path)
         
     def generate_model_5(self):
-        params = self.parse_params()
+        params = self.model_5_params.text().split(" ")
         p1 = int(params[0])
         p2 = int(params[1])
 
@@ -186,6 +271,8 @@ class ModelingConfigWindow(QWidget):
                 if (i + j) % 2 == 0:
                     cv2.rectangle(chessboard, (x, y), (x + p2, y + p2), 0, thickness=-1)
 
+        self.image_m = chessboard
+        self.image_v = None
         self.image_generated.emit(chessboard)
     
     def generate_model_7(self):
@@ -258,42 +345,54 @@ class ModelingConfigWindow(QWidget):
             out.write(frame)
 
         # Release the VideoWriter
+        self.image_m = None
+        self.image_v = output_video_path
         out.release()
         self.video_generate.emit(output_video_path)
 
     
     def generate_model_8(self):
-        params = self.parse_params()
+        params = self.model_8_params.text().split(" ")
         p1 = 0
-        p2 = 1 
+        p2 = 255 
         if params[0] != "":
-            p1 = int(params[0])
-            p2 = int(params[1])
+            p1 = float(params[0])
+            p2 = float(params[1])
         print(p1, p2)
 
         image_size = (self.height, self.width)
 
-        def generate_uniform_noise(a=0, b=1, image_size=image_size):
-            noise_field = np.random.uniform(a, b, image_size)
-            noise_field_scaled = ((noise_field - a) / (b - a) * 255).astype(np.uint8)
-            return noise_field_scaled
+        def generate_uniform_noise_frame(height, width, low=0, high=255):
+            # Generate white noise with uniform distribution for a single frame
+            noise_frame = np.random.uniform(low, high, size=(height, width, 3)).astype(np.uint8)
+            return noise_frame
 
         total_frames = 100  
         fps = 30  
-        output_video_path = 'generated_vids/uniform_noise_video.mp4'
+        output_video_path = 'generated_vids/uniform_noise_videoo.mp4'
 
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        out = cv2.VideoWriter(output_video_path, fourcc, fps, image_size, isColor=False)
+        out = cv2.VideoWriter(output_video_path, fourcc, fps, image_size)
 
         for frame_num in range(total_frames):
-            noise_frame = generate_uniform_noise(p1, p2, image_size)
+            noise_frame = generate_uniform_noise_frame(image_size[0], image_size[1], p1, p2)
             out.write(noise_frame)
 
+        self.image_m = None
+        self.image_v = output_video_path
         out.release()
         self.video_generate.emit(output_video_path)
 
+
     def generate_model_9(self):
         image_size = (self.height, self.width)
+
+        params = self.model_9_params.text().split(" ")
+
+
+        if params[0] != "":
+            p1 = int(params[0])
+            p2 = int(params[1])
 
         def generate_normal_noise(mean=0, variance=1, image_size=(512, 512)):
             noise_field = np.random.normal(mean, np.sqrt(variance), image_size)
@@ -303,6 +402,10 @@ class ModelingConfigWindow(QWidget):
         
         mean = 128  # Mean of the normal distribution
         variance = 100  # Variance of the normal distribution
+        if params[0] != "":
+            mean = int(params[0])
+            variance = int(params[1])
+
         total_frames = 100  # Number of frames in the video
         fps = 30  # Frames per second
         output_video_path = 'generated_vids/normal_noise_video.mp4'
@@ -314,5 +417,105 @@ class ModelingConfigWindow(QWidget):
             noise_frame = generate_normal_noise(mean, variance, image_size)
             out.write(noise_frame)
 
+        
+        self.image_m = None
+        self.image_v = output_video_path
         out.release()
         self.video_generate.emit(output_video_path)
+
+    def resize_with_aspect_ratio(self, image, target_width=None, target_height=None):
+        current_height, current_width = image.shape[:2]
+
+        aspect_ratio = current_width / float(current_height)
+
+        if target_width is not None and target_height is not None:
+            new_width = target_width
+            new_height = target_height
+
+        elif target_width is not None:
+            new_width = target_width
+            new_height = int(target_width / aspect_ratio)
+        elif target_height is not None:
+            new_height = target_height
+            new_width = int(target_height * aspect_ratio)
+        else:
+            return image
+        print(new_width, new_height)
+        resized_image = cv2.resize(image, (int(new_width), int(new_height)))
+        return resized_image
+    
+    def resize_video(self, input_path, output_path, target_width=None, target_height=None):
+        # Open the video file
+        video_capture = cv2.VideoCapture(input_path)
+
+        # Get the original video's frame dimensions
+        original_width = int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+        original_height = int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        # Calculate the aspect ratio of the original video
+        aspect_ratio = original_width / float(original_height)
+
+        # If both target_width and target_height are provided, use them
+        if target_width is not None and target_height is not None:
+            new_width = target_width
+            new_height = target_height
+        # If only one of target_width or target_height is provided, calculate the other based on the aspect ratio
+        elif target_width is not None:
+            new_width = target_width
+            new_height = int(target_width / aspect_ratio)
+        elif target_height is not None:
+            new_height = target_height
+            new_width = int(target_height * aspect_ratio)
+        else:
+            # If neither target_width nor target_height is provided, use the original dimensions
+            new_width, new_height = original_width, original_height
+
+        # Create a VideoWriter object to save the resized video
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Use appropriate codec based on your system
+        video_writer = cv2.VideoWriter(output_path, fourcc, 20.0, (int(new_width), int(new_height)))
+
+        while True:
+            # Read a frame from the video
+            ret, frame = video_capture.read()
+
+            # If the video is over, break out of the loop
+            if not ret:
+                break
+
+            # Resize the frame while maintaining the aspect ratio
+            resized_frame = cv2.resize(frame, (int(new_width), int(new_height)))
+
+            # Write the resized frame to the output video file
+            video_writer.write(resized_frame)
+
+        # Release the video capture and writer objects
+        video_capture.release()
+        video_writer.release()
+
+        print(f"Resized video saved to {output_path}")
+
+    def save(self):
+        if self.image_m is None and self.image_v is None:
+            return
+        
+        x = float(self.size.text().split()[0])
+        if self.image_m:
+
+            file_dialog = QFileDialog()
+            file_dialog.setDefaultSuffix("jpg")
+
+            file_dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
+            selected_file, _ = file_dialog.getSaveFileName(self, 'Save data', '', 'Jpg Files (*.jpg)')
+            
+            if selected_file:
+                resized_image = self.resize_with_aspect_ratio(self.image_m, x)
+                cv2.imwrite(selected_file, resized_image)
+        else:
+            file_dialog = QFileDialog()
+            file_dialog.setDefaultSuffix("mp4")
+
+            file_dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
+            selected_file, _ = file_dialog.getSaveFileName(self, 'Save data', '', 'mp4 Files (*.mp4)')
+            
+            if selected_file:
+                self.resize_video(self.image_v, selected_file, target_width=x)

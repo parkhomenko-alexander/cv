@@ -56,7 +56,7 @@ def plot_combined_histogram(histograms, name, max_size=400):
 
 class ContentWindow(QWidget):
     histograms = pyqtSignal(np.ndarray, list, list, list, list, list, list, 
-                            list, list, list, list, list, str)
+                            list, list, list, list, list, str, np.ndarray)
 
     def __init__(self, fps=config.fps):
         super().__init__()
@@ -138,7 +138,7 @@ class ContentWindow(QWidget):
         self.reset_btn.clicked.connect(self.reset_content)
         self.scr_shot_btn.clicked.connect(self.take_screenshot)
 
-        self.statistics_action.triggered.connect(self.calculate_statistics)
+        self.statistics_action.triggered.connect(self.open_analyze_window)
 
         self.main_layout.addWidget(self.label, 0, 0, 3, 2)
         self.main_layout.addWidget(self.image_btn, 3, 0, 1, 1)
@@ -245,6 +245,8 @@ class ContentWindow(QWidget):
     def play_pause_video(self):
         if not self.cv_video_capture.isOpened():
             return
+        
+
         if self.is_video_play is False:
             self.play_pause_btn.setText('pause')
             self.frame_timer.timeout.connect(self.display_video)
@@ -296,14 +298,19 @@ class ContentWindow(QWidget):
 
 
                 if self.is_filter_toggled and state.selected_filter=="яркость":
+                    self.current_image = self.frame
                     h, w, *ch = frame.shape
                     qt_image = QImage(frame.data, w, h, w, QImage.Format.Format_Grayscale8)
                 else:
+                    self.current_image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                     h, w, ch = frame.shape
                     bytes_per_line = ch * w
                     qt_image = QImage(frame.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
 
                 # Отображаем кадр в QLabel
+                if self.analyze_window.isVisible():
+                    self.calculate_statistics()
+                
                 pixmap = QPixmap.fromImage(qt_image)
                 self.label.setPixmap(pixmap)
             else:
@@ -353,13 +360,13 @@ class ContentWindow(QWidget):
         if True:
             histograms = [
                 {
-                    "hist": cv2.calcHist([image], [0], None, [256], [0, 256]),
+                    "hist": cv2.calcHist([image], [0], None, [256], [0, 256]).flatten(),
                     "color": 'black', 
                     "label":'Grayscale'
                 }
             ]
             hist = plot_combined_histogram(histograms, "generated_img/hist.png")
-            return hist
+            return hist, histograms[0]["hist"]
             
         b, g, r = cv2.split(image)
 
@@ -709,7 +716,9 @@ class ContentWindow(QWidget):
 
     def calculate_statistics(self):
         # hist = self.calculate_histograms(self.cv_original_image)
-        hist = self.calculate_histograms(self.current_image)
+        if self.current_image is None:
+            return
+        hist, freq = self.calculate_histograms(self.current_image)
         means = self.calculate_means(self.current_image)
         varsiance = self.calculate_dispersion(self.current_image)
         std = self.calculate_std(self.current_image)
@@ -724,10 +733,13 @@ class ContentWindow(QWidget):
 
         self.histograms.emit(hist, means, varsiance, std, skew, kurtosis,
                              variance, mins, maxs, percentil5, percentil95,
-                             median, "generated_img/hist.png")
+                             median, "generated_img/hist.png", freq)
 
-        self.analyze_window.show()
         print("analyze") 
+
+    def open_analyze_window(self):
+        self.calculate_statistics()
+        self.analyze_window.show()
     #* ANALYZE END ==============================
 
 
