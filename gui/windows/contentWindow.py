@@ -13,6 +13,7 @@ from scipy.stats import skew, kurtosis
 
 from gui.config import config
 from gui.windows.analyzeWindow import AnalyzeWindow
+from gui.windows.captureWindow import PanningWindow, RecordingControlWindow
 
 from ..state import state
 
@@ -107,6 +108,7 @@ class ContentWindow(QWidget):
         self.play_pause_btn = QPushButton("pause")
         self.filter_btn = QPushButton("filter rgb")
         self.scr_shot_btn = QPushButton("scr_shot")
+        self.capture_btn = QPushButton("cupture")
 
         self.reset_btn = QPushButton("reset")
 
@@ -140,9 +142,12 @@ class ContentWindow(QWidget):
 
         self.statistics_action.triggered.connect(self.open_analyze_window)
 
+        self.capture_btn.clicked.connect(self.open_capture)
+
         self.main_layout.addWidget(self.label, 0, 0, 3, 2)
         self.main_layout.addWidget(self.image_btn, 3, 0, 1, 1)
         self.main_layout.addWidget(self.image_save_btn, 3, 1, 1, 1)
+        
 
         self.main_layout.addWidget(self.video_btn, 4, 0, 1, 1)
         self.main_layout.addWidget(self.play_pause_btn, 4, 1, 1, 1)
@@ -152,6 +157,8 @@ class ContentWindow(QWidget):
         self.main_layout.addWidget(self.reset_btn, 6, 0, 1, 2)
         self.main_layout.addWidget(self.scr_shot_btn, 7, 0, 1, 2)
         self.main_layout.addWidget(self.number_input, 8, 0, 1, 2)
+        self.main_layout.addWidget(self.capture_btn, 9, 0, 1, 1)
+
 
 
         self.setLayout(self.main_layout)
@@ -435,22 +442,6 @@ class ContentWindow(QWidget):
             ]
             return variance
         
-        b, g, r = cv2.split(image)
-        variance = [
-            {
-                "val": int(np.var(b)),
-                "name": "B"
-            },
-            {
-                "val": int(np.var(g)),
-                "name": "G"
-            }, {
-                "val": int(np.var(r)),
-                "name": "R"
-            }
-        ]
-
-        return variance
     
     def calculate_std(self, image):
 
@@ -462,23 +453,7 @@ class ContentWindow(QWidget):
                 }
             ]
             return vals 
-        
-        b, g, r = cv2.split(image)
-        vals = [
-            {
-                "val": int(np.std(b)),
-                "name": "B"
-            },
-            {
-                "val": int(np.std(g)),
-                "name": "G"
-            }, {
-                "val": int(np.std(r)),
-                "name": "R"
-            }
-        ]
 
-        return vals
     
     def calculate_skew(self, image):
 
@@ -490,24 +465,7 @@ class ContentWindow(QWidget):
                 }
             ]
             return vals 
-        
-        b, g, r = cv2.split(image)
-        vals = [
-            {
-                "val": int(skew(b.flatten())),
-                "name": "B"
-            },
-            {
-                "val": int(skew(g.flatten())),
-                "name": "G"
-            }, {
-                "val": int(skew(r.flatten())),
-                "name": "R"
-            }
-        ]
-
-        return vals
-    
+     
     def calculate_kurtosis(self, image):
 
         if True:
@@ -518,23 +476,7 @@ class ContentWindow(QWidget):
                 }
             ]
             return vals 
-    
-        b, g, r = cv2.split(image)
-        vals = [
-            {
-                "val": int(kurtosis(b.flatten(), fisher=True)),
-                "name": "B"
-            },
-            {
-                "val": int(kurtosis(g.flatten(), fisher=True)),
-                "name": "G"
-            }, {
-                "val": int(kurtosis(r.flatten(), fisher=True)),
-                "name": "R"
-            }
-        ]
-
-        return vals
+     
     
     def calculate_variance(self, image):
 
@@ -549,30 +491,6 @@ class ContentWindow(QWidget):
             ]
             return vals 
         
-        b, g, r = cv2.split(image)
-        mean_b, mean_g, mean_r = np.mean(b), np.mean(g), np.mean(r)
-        std_dev_b, std_dev_g, std_dev_r = np.std(b), np.std(g), np.std(r)
-
-        cv_b = (std_dev_b / mean_b) * 100
-        cv_g = (std_dev_g / mean_g) * 100
-        cv_r = (std_dev_r / mean_r) * 100
-
-        vals = [
-            {
-                "val": int(cv_b),
-                "name": "B"
-            },
-            {
-                "val": int(cv_g),
-                "name": "G"
-            }, {
-                "val": int(cv_r),
-                "name": "R"
-            }
-        ]
-
-        return vals
-    
     def calculate_min(self, image):
 
         if True:
@@ -583,23 +501,6 @@ class ContentWindow(QWidget):
                 }
             ]
             return vals 
-
-        b, g, r = cv2.split(image)
-        vals = [
-            {
-                "val": np.min(b),
-                "name": "B"
-            },
-            {
-                "val": np.min(g),
-                "name": "G"
-            }, {
-                "val": np.min(r),
-                "name": "R"
-            }
-        ]
-
-        return vals
     
     def calculate_max(self, image):
 
@@ -611,23 +512,6 @@ class ContentWindow(QWidget):
                 }
             ]
             return vals 
-
-        b, g, r = cv2.split(image)
-        vals = [
-            {
-                "val": np.max(b),
-                "name": "B"
-            },
-            {
-                "val": np.max(g),
-                "name": "G"
-            }, {
-                "val": np.max(r),
-                "name": "R"
-            }
-        ]
-
-        return vals
     
     def calculate_percentile5(self, image):
 
@@ -639,23 +523,6 @@ class ContentWindow(QWidget):
                 }
             ]
             return vals 
-
-        b, g, r = cv2.split(image)
-        vals = [
-            {
-                "val": np.percentile(b.flatten(), 5),
-                "name": "B"
-            },
-            {
-                "val": np.percentile(g.flatten(), 5),
-                "name": "G"
-            }, {
-                "val": np.percentile(r.flatten(), 5),
-                "name": "R"
-            }
-        ]
-
-        return vals
     
     def calculate_percentile95(self, image):
 
@@ -668,23 +535,6 @@ class ContentWindow(QWidget):
             ]
             return vals 
 
-        b, g, r = cv2.split(image)
-        vals = [
-            {
-                "val": np.percentile(b.flatten(), 95),
-                "name": "B"
-            },
-            {
-                "val": np.percentile(g.flatten(), 95),
-                "name": "G"
-            }, {
-                "val": np.percentile(r.flatten(), 95),
-                "name": "R"
-            }
-        ]
-
-        return vals
-    
     def calculate_median(self, image):
 
         if True:
@@ -695,24 +545,6 @@ class ContentWindow(QWidget):
                 }
             ]
             return vals 
-
-        b, g, r = cv2.split(image)
-        vals = [
-            {
-                "val": np.median(b),
-                "name": "B"
-            },
-            {
-                "val": np.median(g),
-                "name": "G"
-            }, {
-                "val": np.median(r),
-                "name": "R"
-            }
-        ]
-
-        return vals
-
 
     def calculate_statistics(self):
         # hist = self.calculate_histograms(self.cv_original_image)
@@ -765,3 +597,11 @@ class ContentWindow(QWidget):
         self.cv_video_capture = cv2.VideoCapture()
         self.label.setPixmap(QPixmap())
         self.cv_original_image = None
+
+    def open_capture(self):
+        control_window = RecordingControlWindow(None)
+        panning_window = PanningWindow(control_window)
+        control_window.panning_window = panning_window
+
+        control_window.show()
+        panning_window.show()
