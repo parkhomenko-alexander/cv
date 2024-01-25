@@ -236,7 +236,7 @@ class ModelingConfigWindow(QWidget):
 
         side_length = 100
         delta_a = int(params[0])
-        T0 = int(params[1])
+        T0 = float(params[1])
 
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         out = cv2.VideoWriter(output_video_path, fourcc, fps, frame_size, isColor=False)
@@ -499,7 +499,7 @@ class ModelingConfigWindow(QWidget):
             return
         
         x = float(self.size.text().split()[0])
-        if self.image_m:
+        if self.image_m is not None:
 
             file_dialog = QFileDialog()
             file_dialog.setDefaultSuffix("jpg")
