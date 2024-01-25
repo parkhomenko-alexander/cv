@@ -108,7 +108,7 @@ class ContentWindow(QWidget):
         self.play_pause_btn = QPushButton("pause")
         self.filter_btn = QPushButton("filter rgb")
         self.scr_shot_btn = QPushButton("scr_shot")
-        self.capture_btn = QPushButton("cupture")
+        self.capture_btn = QPushButton("capture")
 
         self.reset_btn = QPushButton("reset")
 
